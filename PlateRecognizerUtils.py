@@ -141,7 +141,7 @@ def UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", poSDKResultDict = "
               loSDKResultDict["model_make"] = []
               loSDKResultDict["color"] = []
               loSDKResultDict["orientation"] = []
-           if True:
+           elif True:
               loSDKResultDict["model_make"] = None
               loSDKResultDict["color"] = None
               loSDKResultDict["orientation"] = None
