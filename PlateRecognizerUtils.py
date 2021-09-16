@@ -6,11 +6,13 @@ import requests # Used to get Numberplate
 from pprint import pprint
 import json
 import copy
+import os
 
 import FarmgateUtils
 
 glDebug = True
 gcPlateRecognizerToken = "1df3d23be00daf490284c608b45456e780123a7f"
+gcParkpowToken = '98f98d713ba11aa#################################'
 gcCameraID = "Test-Camera"
 
 gnStartTime = 0
@@ -39,8 +41,13 @@ def GetDictFromSDK(pcImageFullFileName):
     # See:  https://docs.platerecognizer.com/?python#license-plate-recognition
     global glDebug, gcPlateRecognizerToken, gcCameraID
     regions = ['nz'] # Change to your country
+
+    # Build full path from script path
+    dir_name = os.path.dirname(os.path.abspath(__file__))
+    image_file_path = os.path.join(dir_name, pcImageFullFileName)
+
     try:
-        with open(pcImageFullFileName, 'rb') as fp:
+        with open(image_file_path, 'rb') as fp:
             response = requests.post(
                 'http://localhost:8080/v1/plate-reader/',
                 data=dict(regions=regions),  # Optional
@@ -125,7 +132,7 @@ def GetDictFromCloudAPI(pcImageLocation):
 
 def UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", poSDKResultDict = "", pcCameraID = "", pcTime = ""):
     # See https://app.parkpow.com/documentation/#operation/Send%20Camera%20Images%20and%20License%20Plate%20Data
-    global glDebug, gcPlateRecognizerToken, gcCameraID
+    global glDebug, gcParkpowToken, gcCameraID
     try:
         if pcCameraID == "":  pcCameraID = gcCameraID
         if len(pcFileOrBase64Image) < 250:
@@ -137,24 +144,16 @@ def UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", poSDKResultDict = "
         #loSDKResultDict = FarmgateUtils.CopyValuesOnly(poSDKResultDict)
         if not "model_make" in loSDKResultDict:
            if glDebug:  print("\nUploadPhotoAndDetailsToParkPow():  Needed to add MMC keys to poSDKResultDict")
-           if False:
-              loSDKResultDict["model_make"] = []
-              loSDKResultDict["color"] = []
-              loSDKResultDict["orientation"] = []
-           elif True:
-              loSDKResultDict["model_make"] = None
-              loSDKResultDict["color"] = None
-              loSDKResultDict["orientation"] = None
-           else:
-              loSDKResultDict["model_make"] = [{"make": "BMW", "score": 0.254, "model": "5 Series"},]
-              loSDKResultDict["color"] = [{"color": "silver","score": 0.864},]
-              loSDKResultDict["orientation"] = [{"score": 0.921, "orientation": "Front"},]
+           loSDKResultDict["model_make"] = []
+           loSDKResultDict["color"] = []
+           loSDKResultDict["orientation"] = []
+
         #loBodyDict = {"camera": pcCameraID, "image": lcBase64Image, "results": loSDKResultDict }
         if glDebug:  print(f"\nUploadPhotoAndDetailsToParkPow():  loSDKResultDict is type {type(loSDKResultDict)}:  {loSDKResultDict}")
         response = requests.post(
             "https://app.parkpow.com/api/v1/log-vehicle/",
-            json = dict(camera=pcCameraID, image=lcBase64Image, results=loSDKResultDict),
-            headers = {"Authorization": f"Token {gcPlateRecognizerToken}"} )
+            json = dict(camera='cam1', image=lcBase64Image, results=[loSDKResultDict]),
+            headers = {"Authorization": f"Token {gcParkpowToken}"} )
         if glDebug:  print("\nResponse from ParkPow API:")
         if glDebug:  print(f"{response.json()}")
         #if glDebug:  print(f"UploadPhotoAndDetailsToParkPow():  loBodyDict is {loBodyDict}")
