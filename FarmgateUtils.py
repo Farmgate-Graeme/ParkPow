@@ -24,22 +24,24 @@ glDebug = True
 if glDebug: gnStartTime = 0 
 
 
-def ConvertPhotoToBase64(pcPhotoFullPathName): 
+def ConvertPhotoToBase64(pcPhotoFullPathName):
     # See: https://www.codegrepper.com/code-examples/python/convert+jpg+to+base64+python
+    dir_name = os.path.dirname(os.path.abspath(__file__))
+    image_file_path = os.path.join(dir_name, pcPhotoFullPathName)
+
     global glDebug
-    image_64_decode = ""
+    image_64_encode = ""
     try:
-        image = open(pcPhotoFullPathName, 'rb')
+        image = open(image_file_path, 'rb')
         image_read = image.read()
-        image_64_encode = base64.encodebytes(image_read)
-        #print(image_64_encode)
-        image_64_decode = base64.decodebytes(image_64_encode) 
+        encoded_bytes = base64.b64encode(image_read)
+        image_64_encode = encoded_bytes.decode('utf-8')
         #image_result = open('deer_decode.jpg', 'wb') # create a writable image and write the decoding result
         #image_result.write(image_64_decode)
     except Exception as exc:
         print(f"B64 Conversion failed:  %s\n" % str(exc))
 
-    return image_64_decode
+    return image_64_encode
 
 def GetCurrentTimeMark():
     return round(time.perf_counter(), 3)
