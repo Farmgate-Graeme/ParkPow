@@ -14,27 +14,27 @@ import site
 import platform
 
 
-# Ensure that our "RaspberryPi" folder is in this Python session's path, and import PlateRecognizerUtils module
+# Ensure that our "ParkPow" folder is in this Python session's path, and import PlateRecognizerUtils module
 try:
-    import PlateRecognizerUtils    # Adminsoft's library of SQL utilities in the RaspberryPi folder / package
-    if any("RaspberryPi" in lcDir for lcDir in sys.path):
-       print("TestUploadPhotoToParkPow.py:  PlateRecognizerUtils was imported successfully, and RaspberryPi is already in the path")
+    import PlateRecognizerUtils    # Adminsoft's library of SQL utilities in the ParkPow folder / package
+    if any("ParkPow" in lcDir for lcDir in sys.path):
+       print("TestUploadPhotoToParkPow.py:  PlateRecognizerUtils was imported successfully, and ParkPow is already in the path")
     else:
-       print("TestUploadPhotoToParkPow.py:  PlateRecognizerUtils was imported successfully, but RaspberryPi is not in the Python path")
+       print("TestUploadPhotoToParkPow.py:  PlateRecognizerUtils was imported successfully, but ParkPow is not in the Python path")
        print(f"sys.path:  {sys.path}")
 except:
-    # Add the RaspberryPi folder to the Python path (if not already)
+    # Add the ParkPow folder to the Python path (if not already)
     # Note:  We use forward-slashes in the paths below. These don't need to be escaped (like back-slashes would).
-    if os.path.isfile("../FarmgateMain.py"):
+    if os.path.isfile("../PlateRecognizerUtils.py"):
        site.addsitedir("../")
        print("TestUploadPhotoToParkPow.py:  '../' was added to the path")
-    elif os.path.isfile("../RaspberryPi/FarmgateMain.py"):
-       site.addsitedir("../RaspberryPi/")
-       print("TestUploadPhotoToParkPow.py:  '../RaspberryPi' was added to the path")
-    elif os.path.isfile("J:/Python/Farmgate/RaspberryPi/FarmgateMain.py"):
-       site.addsitedir("J:/Python/Farmgate/RaspberryPi")
-       print("TestUploadPhotoToParkPow.py:  'J:/Python/Farmgate/RaspberryPi' was added to the path")
-    import PlateRecognizerUtils    # Adminsoft's library of SQL utilities in the RaspberryPi folder / package
+    elif os.path.isfile("../ParkPow/PlateRecognizerUtils.py"):
+       site.addsitedir("../ParkPow/")
+       print("TestUploadPhotoToParkPow.py:  '../ParkPow' was added to the path")
+    elif os.path.isfile("J:/Python/Farmgate/ParkPow/PlateRecognizerUtils.py"):
+       site.addsitedir("J:/Python/Farmgate/ParkPow")
+       print("TestUploadPhotoToParkPow.py:  'J:/Python/Farmgate/ParkPow' was added to the path")
+    import PlateRecognizerUtils    # Adminsoft's library of SQL utilities in the ParkPow folder / package
 
 #import PlateRecognizerUtils
 import FarmgateUtils
@@ -51,16 +51,17 @@ def main():
         lcFullPathName = gcImageLocation + '/' + lcFileName
         print(f"\nTestUploadPhotoToParkPow.py:  lcFullPathName is {lcFullPathName}")
         lcVehicleType = "" ; lcNumberPlate = "" ; lcTimeStamp = "" ; lcResponseJSON = ""
-        loResultDict = {} ; loResponseDict = {}
+        loResultItem = None ; laResultsList = [] ; loResponseDict = {}
         lnStartTime = FarmgateUtils.GetCurrentTimeMark()
 
-        lcVehicleType, lcNumberPlate, lcTimeStamp, loResultDict, loResponseDict, lcResponseJSON = PlateRecognizerUtils.ObtainInfoFromPhoto(lcFullPathName)           # f"{gcImageLocation}/{lcFileName}"
+        lcVehicleType, lcNumberPlate, lcTimeStamp, loResultItem, laResultsList, loResponseDict, lcResponseJSON = PlateRecognizerUtils.ObtainInfoFromPhoto(lcFullPathName)           # f"{gcImageLocation}/{lcFileName}"
         print(f"TestUploadPhotoToParkPow.py:  ObtainInfoFromPhoto() took {FarmgateUtils.TimeElapsedSinceStartMark(lnStartTime)} seconds")
-        print(f"TestUploadPhotoToParkPow.py:  loResultDict is {loResultDict}")
+        print(f"TestUploadPhotoToParkPow.py:  loResultItem is {loResultItem}")
+        print(f"TestUploadPhotoToParkPow.py:  laResultsList is {laResultsList}")
 
         lnStartTime = FarmgateUtils.GetCurrentTimeMark()
         #PlateRecognizerUtils.UploadPhotoAndDetailsToParkPow(lcFullPathName, loResultDict)
-        PlateRecognizerUtils.UploadPhotoAndDetailsToParkPow(lcFullPathName, loResultDict)
+        PlateRecognizerUtils.UploadPhotoAndDetailsToParkPow(lcFullPathName, laResultsList)
             # UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", pcSDKResultJSON = "", pcCameraID = "", pcTime = "")
         print(f"TestUploadPhotoToParkPow.py:  UploadPhotoAndDetailsToParkPow() took {FarmgateUtils.TimeElapsedSinceStartMark(lnStartTime)} seconds")
 

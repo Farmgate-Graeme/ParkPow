@@ -12,7 +12,7 @@ import FarmgateUtils
 
 glDebug = True
 gcPlateRecognizerToken = "1df3d23be00daf490284c608b45456e780123a7f"
-gcParkpowToken = '98f98d713ba11aa#################################'
+gcParkPowToken = '2d6c995eb7cc10bdd33fefa400e60a74eca157c9'
 gcCameraID = "Test-Camera"
 
 gnStartTime = 0
@@ -22,15 +22,15 @@ def ObtainInfoFromPhoto(pcImageFullFileName = ""):
     global glDebug
     loResponseDict = {}
     lcVehicleType = "" ; lcNumberPlate = "" ; lcTimeStamp = "" ; lcResponseJSON = ""
-    loResultDict = {} ; loResponseDict = {}
+    loResultItem = None ; laResultsList = [] ; loResponseDict = {}
     try:
         if pcImageFullFileName == "":
            print("ObtainInfoFromPhoto():  pcImageFullFileName is empty")
            return "", "", "", {}, {}, ""
         if glDebug:  print(f"ObtainInfoFromPhoto():  pcImageFullFileName is {pcImageFullFileName}")
         loResponseDict, lcResponseJSON = GetDictFromSDK(pcImageFullFileName)
-        lcVehicleType, lcNumberPlate, lcTimeStamp, loResultDict = ProcessDictFromSDK(loResponseDict)
-        return lcVehicleType, lcNumberPlate, lcTimeStamp, loResultDict, loResponseDict, lcResponseJSON
+        lcVehicleType, lcNumberPlate, lcTimeStamp, loResultItem, laResultsList = ProcessDictFromSDK(loResponseDict)
+        return lcVehicleType, lcNumberPlate, lcTimeStamp, loResultItem, laResultsList, loResponseDict, lcResponseJSON
 
     except Exception as exc:
         print(f"ObtainInfoFromPhoto() failed:  %s\n" % str(exc))
@@ -40,17 +40,18 @@ def ObtainInfoFromPhoto(pcImageFullFileName = ""):
 def GetDictFromSDK(pcImageFullFileName):
     # See:  https://docs.platerecognizer.com/?python#license-plate-recognition
     global glDebug, gcPlateRecognizerToken, gcCameraID
-    regions = ['nz'] # Change to your country
+    lcRegion = ['nz'] # Change to your country
 
     # Build full path from script path
     dir_name = os.path.dirname(os.path.abspath(__file__))
     image_file_path = os.path.join(dir_name, pcImageFullFileName)
+    if glDebug:  print(f"GetDictFromSDK():  image_file_path is {image_file_path}")
 
     try:
         with open(image_file_path, 'rb') as fp:
             response = requests.post(
                 'http://localhost:8080/v1/plate-reader/',
-                data=dict(regions=regions),  # Optional
+                data=dict(regions=lcRegion, mmc=True),  # Optional
                 files=dict(upload=fp),
                 #camera_id = gcCameraID,
                 headers={"Authorization": f"Token {gcPlateRecognizerToken}"} )
@@ -80,6 +81,7 @@ def ProcessDictFromSDK(poResponseDict):
     try:
           # Unpack response into Type, Plate and Timestamp
         lcFileName = "" ; lcType = "" ; lcPlate = "" ; lcTimeStamp = ""
+        laResultsList = [] ; loResultItem = None
         print()
         lcFileName = f"{poResponseDict['filename']}"
         lcTimeStamp = f"{poResponseDict['timestamp']}"
@@ -90,14 +92,17 @@ def ProcessDictFromSDK(poResponseDict):
         if laResultsList == []:
             print('Results blank, plate not found in photo')
             return "", "", "", "", {}
-        for loResultDict in laResultsList: # Can be multiple plates present, Should be only 1.
-            lcPlate = f"{loResultDict['plate']}" # 'candidates' contains other number plate matches, the best guess should be sufficient
-            loVehicleDict = loResultDict['vehicle'] # 'vehicle'/ may not always have a value
+        for loResultItem in laResultsList: # Can be multiple plates present, Should be only 1.
+            lcPlate = f"{loResultItem['plate']}" # 'candidates' contains other number plate matches, the best guess should be sufficient
+            loVehicleDict = loResultItem['vehicle'] # 'vehicle'/ may not always have a value
             lcType = f"{loVehicleDict['type']}"
             break                                   # The most likely result is always first
 
-        if glDebug:  print(f"ProcessDictFromSDK():  Vehicle Type is {lcType}, Number Plate is {lcPlate}, Time Stamp is {lcTimeStamp}")
-        return lcType, lcPlate, lcTimeStamp, loResultDict
+        if glDebug:
+           print(f"ProcessDictFromSDK():  Vehicle Type is {lcType}, Number Plate is {lcPlate}, Time Stamp is {lcTimeStamp}")
+           print(f"ProcessDictFromSDK():  len(loResultItem) is {len(loResultItem)}, loResultItem is {loResultItem}")
+           print(f"ProcessDictFromSDK():  len(laResultsList) is {len(laResultsList)}, laResultsList is {laResultsList}")
+        return lcType, lcPlate, lcTimeStamp, loResultItem, laResultsList
 
     except Exception as exc:
         print(f"ProcessDictFromSDK() failed:  %s\n" % str(exc))
@@ -130,30 +135,33 @@ def GetDictFromCloudAPI(pcImageLocation):
         return {}
 
 
-def UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", poSDKResultDict = "", pcCameraID = "", pcTime = ""):
+def UploadPhotoAndDetailsToParkPow(pcFileOrBase64Image = "", poSDKResultList = "", pcCameraID = "", pcTime = ""):
     # See https://app.parkpow.com/documentation/#operation/Send%20Camera%20Images%20and%20License%20Plate%20Data
-    global glDebug, gcParkpowToken, gcCameraID
+    # 17 Sep 21:  Changes by Brian Nyaundi <brian@platerecognizer.com>
+    global glDebug, gcParkPowToken, gcCameraID
     try:
         if pcCameraID == "":  pcCameraID = gcCameraID
         if len(pcFileOrBase64Image) < 250:
            lcBase64Image = FarmgateUtils.ConvertPhotoToBase64(pcFileOrBase64Image)
         else:
            lcBase64Image = pcFileOrBase64Image
-        loSDKResultDict = poSDKResultDict
-        #loSDKResultDict = copy.deepcopy(poSDKResultDict)
-        #loSDKResultDict = FarmgateUtils.CopyValuesOnly(poSDKResultDict)
-        if not "model_make" in loSDKResultDict:
-           if glDebug:  print("\nUploadPhotoAndDetailsToParkPow():  Needed to add MMC keys to poSDKResultDict")
-           loSDKResultDict["model_make"] = []
-           loSDKResultDict["color"] = []
-           loSDKResultDict["orientation"] = []
+        if glDebug:  print(f"UploadPhotoAndDetailsToParkPow():  len(lcBase64Image) is {len(lcBase64Image)}")
 
-        #loBodyDict = {"camera": pcCameraID, "image": lcBase64Image, "results": loSDKResultDict }
-        if glDebug:  print(f"\nUploadPhotoAndDetailsToParkPow():  loSDKResultDict is type {type(loSDKResultDict)}:  {loSDKResultDict}")
+        loSDKResultList = poSDKResultList
+        if glDebug:  print(f"UploadPhotoAndDetailsToParkPow():  len(loSDKResultList) is {len(loSDKResultList)}, loSDKResultList is {loSDKResultList}")
+        # 17 Sep 21 GE:  It seems that the following is not required - the photo and details upload OK without them
+        # if not "model_make" in loSDKResultList[0]:
+        #   if glDebug:  print("\nUploadPhotoAndDetailsToParkPow():  Needed to add MMC keys to poSDKResultList")
+        #   loSDKResultList[0]["model_make"] = []
+        #   loSDKResultList[0]["color"] = []
+        #   loSDKResultList[0]["orientation"] = []
+
+        #loBodyDict = {"camera": pcCameraID, "image": lcBase64Image, "results": loSDKResultList }
+        if glDebug:  print(f"\nUploadPhotoAndDetailsToParkPow():  loSDKResultList is type {type(loSDKResultList)}:  {loSDKResultList}")
         response = requests.post(
             "https://app.parkpow.com/api/v1/log-vehicle/",
-            json = dict(camera='cam1', image=lcBase64Image, results=[loSDKResultDict]),
-            headers = {"Authorization": f"Token {gcParkpowToken}"} )
+            json = dict(camera=gcCameraID, image=lcBase64Image, results=loSDKResultList),
+            headers = {"Authorization": f"Token {gcParkPowToken}"} )
         if glDebug:  print("\nResponse from ParkPow API:")
         if glDebug:  print(f"{response.json()}")
         #if glDebug:  print(f"UploadPhotoAndDetailsToParkPow():  loBodyDict is {loBodyDict}")

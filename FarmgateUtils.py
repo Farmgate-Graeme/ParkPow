@@ -26,11 +26,14 @@ if glDebug: gnStartTime = 0
 
 def ConvertPhotoToBase64(pcPhotoFullPathName):
     # See: https://www.codegrepper.com/code-examples/python/convert+jpg+to+base64+python
+    # 17 Sep 21:  Changes by Brian Nyaundi <brian@platerecognizer.com>
+    global glDebug
     dir_name = os.path.dirname(os.path.abspath(__file__))
     image_file_path = os.path.join(dir_name, pcPhotoFullPathName)
-
-    global glDebug
     image_64_encode = ""
+    if glDebug:
+       print(f"ConvertPhotoToBase64():  pcPhotoFullPathName is {pcPhotoFullPathName}")
+       print(f"ConvertPhotoToBase64():  image_file_path is {image_file_path}")
     try:
         image = open(image_file_path, 'rb')
         image_read = image.read()
