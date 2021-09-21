@@ -51,7 +51,7 @@ def GetDictFromSDK(pcImageFullFileName):
         with open(image_file_path, 'rb') as fp:
             response = requests.post(
                 'http://localhost:8080/v1/plate-reader/',
-                data=dict(regions=lcRegion, mmc=True),  # Optional
+                data=dict(regions=lcRegion, mmc='true'),  # Optional
                 files=dict(upload=fp),
                 #camera_id = gcCameraID,
                 headers={"Authorization": f"Token {gcPlateRecognizerToken}"} )
