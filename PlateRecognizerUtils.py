@@ -44,14 +44,14 @@ def GetDictFromSDK(pcImageFullFileName):
 
     # Build full path from script path
     dir_name = os.path.dirname(os.path.abspath(__file__))
-    image_file_path = os.path.join(dir_name, pcImageFullFileName)
-    if glDebug:  print(f"GetDictFromSDK():  image_file_path is {image_file_path}")
+    image_file_path = os.path.join(dir_name, pcImageFullFileName).replace("\\", '/')
+    if glDebug:  print(f"GetDictFromSDK({pcImageFullFileName}):\n   image_file_path is {image_file_path}")
 
     try:
         with open(image_file_path, 'rb') as fp:
             response = requests.post(
                 'http://localhost:8080/v1/plate-reader/',
-                data=dict(regions=lcRegion, mmc=True),  # Optional
+                data=dict(regions=lcRegion, mmc='true'),  # Optional
                 files=dict(upload=fp),
                 #camera_id = gcCameraID,
                 headers={"Authorization": f"Token {gcPlateRecognizerToken}"} )
