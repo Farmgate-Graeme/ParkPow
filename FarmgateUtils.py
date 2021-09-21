@@ -17,6 +17,7 @@ import platform
 import urllib       # Native to Python. Contains parse_qs() - Parse query string
 import base64
 import time
+import datetime
 
 lcTestPath = "C:/Users/Andrew/Source/Repos/PlateRecognizer/TestSuites/_TestPlateImages"
 
@@ -81,6 +82,31 @@ def CopyValuesOnly(poSource):
     except Exception as exc:
         print(f"FarmgateUtils.py CopyValuesOnly() failed:  %s\n" % str(exc))
         return None
+
+
+def RecordLocalLogEntry(pcMessage):
+    print("RecordLocalLogEntry()")
+    """ Could update a .txt file with Timestamp,  
+    """
+    # Note:  Writing to the log file(s), and calling DisplayMessage() has an overhead of about 8 milliseconds (which can distort very short tests)
+    try:
+        if not os.path.isdir('./_Logs'):
+            os.mkdir("_Logs")
+        loLogFile = open("_Logs/Log.txt", "a")
+        ldCurrentDateTime = datetime.datetime.now()
+        #lcLogEntry = f"{ldCurrentDateTime.strftime('%c')} - Total Tested Speed: {pnDuration:0.4f} seconds:"
+        lcLogEntry = f"{ldCurrentDateTime}: {pcMessage}\n"
+        loLogFile.write(f"\t{lcLogEntry}")
+        loLogFile.close()
+        print(f"Log Entry Recorded.")
+        # Could use Excel Later
+        #WriteToCSV(pcTestName, pcDescription, pnDuration)
+    except OSError as exc:
+        print("FarmgateUtils.py RecordLocalLogEntry() failed with OSError:  %s\n" % str(exc))
+    except Exception as exc:
+        print(f"FarmgateUtils.py RecordLocalLogEntry() exception:  %s\n" % str(exc))
+    return
+
 
 # Old stuff that can be deleted
 """
